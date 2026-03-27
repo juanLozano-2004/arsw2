@@ -1,21 +1,21 @@
 package edu.eci.arsw.blueprints.controllers;
-
 import edu.eci.arsw.blueprints.model.Blueprint;
 import edu.eci.arsw.blueprints.model.Point;
 import edu.eci.arsw.blueprints.persistence.BlueprintNotFoundException;
 import edu.eci.arsw.blueprints.persistence.BlueprintPersistenceException;
 import edu.eci.arsw.blueprints.services.BlueprintsServices;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/v1/blueprints") // Cambiado el path base
+@RequestMapping("/api/v1/blueprints") // Cambiado el path base para que coincida con el enunciado y evitar conflictos con el controlador web
 public class BlueprintsAPIController {
 
     private final BlueprintsServices services;
@@ -25,58 +25,77 @@ public class BlueprintsAPIController {
     }
 
     // GET /api/v1/blueprints
+    @Operation
     @GetMapping
-    public ResponseEntity<Set<Blueprint>> getAll() {
-        return ResponseEntity.ok(services.getAllBlueprints()); // 200 OK
+    public ResponseEntity<ApiResponse<Set<Blueprint>>> getAll() {
+        Set<Blueprint> blueprints = services.getAllBlueprints();
+        ApiResponse<Set<Blueprint>> response = new ApiResponse<>(200, "Blueprints retrieved successfully", blueprints);
+        return ResponseEntity.ok(response); // 200 OK
     }
 
     // GET /api/v1/blueprints/{author}
+    @Operation
     @GetMapping("/{author}")
-    public ResponseEntity<?> byAuthor(@PathVariable String author) {
+    public ResponseEntity<ApiResponse<?>> byAuthor(@PathVariable String author) {
         try {
-            return ResponseEntity.ok(services.getBlueprintsByAuthor(author)); // 200 OK
+            Set<Blueprint> blueprints = services.getBlueprintsByAuthor(author);
+            ApiResponse<Set<Blueprint>> response = new ApiResponse<>(200, "Blueprints by author retrieved successfully", blueprints);
+            return ResponseEntity.ok(response); // 200 OK
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
+            ApiResponse<Void> response = new ApiResponse<>(404, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); // 404 Not Found
         }
     }
 
     // GET /api/v1/blueprints/{author}/{bpname}
+    @Operation
     @GetMapping("/{author}/{bpname}")
-    public ResponseEntity<?> byAuthorAndName(@PathVariable String author, @PathVariable String bpname) {
+    public ResponseEntity<ApiResponse<?>> byAuthorAndName(@PathVariable String author, @PathVariable String bpname) {
         try {
-            return ResponseEntity.ok(services.getBlueprint(author, bpname)); // 200 OK
+            Blueprint blueprint = services.getBlueprint(author, bpname);
+            ApiResponse<Blueprint> response = new ApiResponse<>(200, "Blueprint retrieved successfully", blueprint);
+            return ResponseEntity.ok(response); // 200 OK
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
+            ApiResponse<Void> response = new ApiResponse<>(404, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); // 404 Not Found
         }
     }
 
     // POST /api/v1/blueprints
+    @Operation
     @PostMapping
-    public ResponseEntity<?> add(@Valid @RequestBody NewBlueprintRequest req) {
+    public ResponseEntity<ApiResponse<Void>> add(@Valid @RequestBody NewBlueprintRequest req) {
         try {
             Blueprint bp = new Blueprint(req.author(), req.name(), req.points());
             services.addNewBlueprint(bp);
-            return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 Created
+            ApiResponse<Void> response = new ApiResponse<>(201, "Blueprint created successfully", null);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response); // 201 Created
         } catch (BlueprintPersistenceException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage())); // 403 Forbidden
+            ApiResponse<Void> response = new ApiResponse<>(403, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response); // 403 Forbidden
         }
     }
 
     // PUT /api/v1/blueprints/{author}/{bpname}/points
+    @Operation
     @PutMapping("/{author}/{bpname}/points")
-    public ResponseEntity<?> addPoint(@PathVariable String author, @PathVariable String bpname,
-                                      @RequestBody Point p) {
+    public ResponseEntity<ApiResponse<Void>> addPoint(@PathVariable String author, @PathVariable String bpname,
+                                                      @RequestBody Point p) {
         try {
             services.addPoint(author, bpname, p.x(), p.y());
-            return ResponseEntity.status(HttpStatus.ACCEPTED).build(); // 202 Accepted
+            ApiResponse<Void> response = new ApiResponse<>(202, "Point added successfully", null);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(response); // 202 Accepted
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
+            ApiResponse<Void> response = new ApiResponse<>(404, e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response); // 404 Not Found
         }
     }
 
     public record NewBlueprintRequest(
             @NotBlank String author,
             @NotBlank String name,
-            @Valid java.util.List<Point> points
+            @Valid List<Point> points
     ) { }
+
+    public record ApiResponse<T>(int code, String message, T data) { }
 }

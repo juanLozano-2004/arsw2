@@ -1,6 +1,7 @@
 edu\eci\arsw\blueprints\filters\RedundancyFilter.class
 edu\eci\arsw\blueprints\controllers\BlueprintsAPIController$NewBlueprintRequest.class
 edu\eci\arsw\blueprints\services\BlueprintsServices.class
+edu\eci\arsw\blueprints\controllers\BlueprintsAPIController$ApiResponse.class
 edu\eci\arsw\blueprints\filters\UndersamplingFilter.class
 edu\eci\arsw\blueprints\model\Blueprint.class
 edu\eci\arsw\blueprints\persistence\BlueprintPersistenceException.class
