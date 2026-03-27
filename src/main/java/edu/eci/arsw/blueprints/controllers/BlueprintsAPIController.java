@@ -15,60 +15,62 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/blueprints")
+@RequestMapping("/api/v1/blueprints") // Cambiado el path base
 public class BlueprintsAPIController {
 
     private final BlueprintsServices services;
 
-    public BlueprintsAPIController(BlueprintsServices services) { this.services = services; }
-
-    // GET /blueprints
-    @GetMapping
-    public ResponseEntity<Set<Blueprint>> getAll() {
-        return ResponseEntity.ok(services.getAllBlueprints());
+    public BlueprintsAPIController(BlueprintsServices services) {
+        this.services = services;
     }
 
-    // GET /blueprints/{author}
+    // GET /api/v1/blueprints
+    @GetMapping
+    public ResponseEntity<Set<Blueprint>> getAll() {
+        return ResponseEntity.ok(services.getAllBlueprints()); // 200 OK
+    }
+
+    // GET /api/v1/blueprints/{author}
     @GetMapping("/{author}")
     public ResponseEntity<?> byAuthor(@PathVariable String author) {
         try {
-            return ResponseEntity.ok(services.getBlueprintsByAuthor(author));
+            return ResponseEntity.ok(services.getBlueprintsByAuthor(author)); // 200 OK
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
         }
     }
 
-    // GET /blueprints/{author}/{bpname}
+    // GET /api/v1/blueprints/{author}/{bpname}
     @GetMapping("/{author}/{bpname}")
     public ResponseEntity<?> byAuthorAndName(@PathVariable String author, @PathVariable String bpname) {
         try {
-            return ResponseEntity.ok(services.getBlueprint(author, bpname));
+            return ResponseEntity.ok(services.getBlueprint(author, bpname)); // 200 OK
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
         }
     }
 
-    // POST /blueprints
+    // POST /api/v1/blueprints
     @PostMapping
     public ResponseEntity<?> add(@Valid @RequestBody NewBlueprintRequest req) {
         try {
             Blueprint bp = new Blueprint(req.author(), req.name(), req.points());
             services.addNewBlueprint(bp);
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            return ResponseEntity.status(HttpStatus.CREATED).build(); // 201 Created
         } catch (BlueprintPersistenceException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage())); // 403 Forbidden
         }
     }
 
-    // PUT /blueprints/{author}/{bpname}/points
+    // PUT /api/v1/blueprints/{author}/{bpname}/points
     @PutMapping("/{author}/{bpname}/points")
     public ResponseEntity<?> addPoint(@PathVariable String author, @PathVariable String bpname,
                                       @RequestBody Point p) {
         try {
             services.addPoint(author, bpname, p.x(), p.y());
-            return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+            return ResponseEntity.status(HttpStatus.ACCEPTED).build(); // 202 Accepted
         } catch (BlueprintNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage())); // 404 Not Found
         }
     }
 
